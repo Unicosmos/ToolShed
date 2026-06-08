@@ -11,20 +11,21 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 current_base_dir = ROOT_DIR
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp")
 
-# 待移动列表存储文件
-PENDING_FILE = os.path.join(ROOT_DIR, 'pending_moves.json')
+current_port = 8081  # 默认端口，启动时覆盖
 
 def load_pending():
-    if os.path.exists(PENDING_FILE):
+    pending_file = os.path.join(ROOT_DIR, f'pending_moves_{current_port}.json')
+    if os.path.exists(pending_file):
         try:
-            with open(PENDING_FILE, 'r', encoding='utf-8') as f:
+            with open(pending_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except:
             return []
     return []
 
 def save_pending(moves):
-    with open(PENDING_FILE, 'w', encoding='utf-8') as f:
+    pending_file = os.path.join(ROOT_DIR, f'pending_moves_{current_port}.json')
+    with open(pending_file, 'w', encoding='utf-8') as f:
         json.dump(moves, f, ensure_ascii=False)
 
 
@@ -328,10 +329,14 @@ class ImageHandler(SimpleHTTPRequestHandler):
 
 
 def run_server(port=8000):
+    global current_port
+    current_port = port
+    
     server_address = ("", port)
     httpd = HTTPServer(server_address, ImageHandler)
     print(f"Server running at http://localhost:{port}")
     print(f"Current base dir: {current_base_dir}")
+    print(f"Pending moves file: pending_moves_{port}.json")
     try:
         print(
             f'Available folders: {[d for d in os.listdir(current_base_dir) if os.path.isdir(os.path.join(current_base_dir, d)) and not d.startswith(".")]}'
