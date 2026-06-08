@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片分类工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d30;
+            --bg-hover: #3c3c3c;
+            --bg-active: #37373d;
+            --border-color: #3e3e42;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #858585;
+            --accent: #0e639c;
+            --accent-hover: #1177bb;
+            --accent-light: #4a9eff;
+            --success: #4ec9b0;
+            --danger: #f44336;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            min-height: 100vh;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ========== Header ========== */
+        .header {
+            background: var(--bg-secondary);
+            padding: 0 1.5rem;
+            height: 52px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header .header-controls {
+            margin-left: auto;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .header-brand .icon {
+            font-size: 1.3rem;
+            filter: drop-shadow(0 0 4px rgba(74, 158, 255, 0.3));
+        }
+
+        .header-base-dir {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .header-base-dir .dir-icon {
+            font-size: 1rem;
+        }
+
+        .header-base-dir input {
+            width: 320px;
+            padding: 0.4rem 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .header-base-dir input:focus {
+            border-color: var(--accent-light);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .folder-badge {
+            padding: 0.35rem 0.9rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .folder-badge .label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .folder-badge .value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .selection-badge {
+            padding: 0.35rem 0.9rem;
+            background: rgba(14, 99, 156, 0.2);
+            border: 1px solid var(--accent);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--accent-light);
+            font-weight: 500;
+            display: none;
+        }
+
+        .selection-badge.visible {
+            display: flex;
+        }
+
+        .btn {
+            padding: 0.4rem 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            height: 32px;
+        }
+
+        .btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .btn-danger {
+            background: rgba(244, 67, 54, 0.15);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: rgba(244, 67, 54, 0.25);
+        }
+
+        .btn-icon {
+            padding: 0.4rem;
+            width: 32px;
+            justify-content: center;
+        }
+
+        /* ========== Main Layout ========== */
+        .main {
+            display: flex;
+            height: calc(100vh - 52px);
+        }
+
+        /* ========== Sidebar ========== */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .sidebar-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+            padding-left: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .folder-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .folder-item {
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+        }
+
+        .folder-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .folder-item.active {
+            background: rgba(14, 99, 156, 0.15);
+            color: var(--accent-light);
+            border-left-color: var(--accent-light);
+            font-weight: 500;
+        }
+
+        .folder-item .folder-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .folder-item .folder-icon {
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+
+        .folder-item.active .folder-icon {
+            opacity: 1;
+        }
+
+        .folder-item .count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 0.1rem 0.4rem;
+            border-radius: 100px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .folder-item.active .count {
+            background: rgba(14, 99, 156, 0.3);
+            color: var(--accent-light);
+        }
+
+        .folder-item .bookmark {
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .folder-item.has-bookmark .bookmark {
+            opacity: 1;
+        }
+
+        /* Settings */
+        .settings-toggle {
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .settings-toggle:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .settings-toggle .arrow {
+            transition: transform 0.2s ease;
+            font-size: 0.7rem;
+        }
+
+        .settings-toggle.expanded .arrow {
+            transform: rotate(90deg);
+        }
+
+        .settings-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .settings-content.expanded {
+            max-height: 600px;
+            padding-top: 0.75rem;
+        }
+
+        .setting-item {
+            margin-bottom: 0.9rem;
+        }
+
+        .setting-item label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            padding-left: 0.5rem;
+        }
+
+        .setting-item input,
+        .setting-item select {
+            width: 100%;
+            padding: 0.45rem 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .setting-item input:focus,
+        .setting-item select:focus {
+            border-color: var(--accent);
+        }
+
+        .setting-item .input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .setting-item .input-row input {
+            flex: 1;
+        }
+
+        .setting-item .input-row button {
+            height: 32px;
+        }
+
+        .setting-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+
+        /* Drop Zone */
+        .drop-zone {
+            margin: 0 1rem 1rem;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, rgba(61, 61, 61, 0.5) 0%, rgba(45, 45, 48, 0.5) 100%);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--text-muted);
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--accent-light);
+            background: rgba(14, 99, 156, 0.08);
+        }
+
+        .drop-zone .drop-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.3rem;
+            opacity: 0.7;
+        }
+
+        .drop-zone h4 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+
+        .drop-zone p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* ========== Content Area ========== */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+        }
+
+        /* Image Grid */
+        .image-grid {
+            display: grid;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .image-card {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            border: 1px solid transparent;
+        }
+
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-color);
+        }
+
+        .image-card.selected {
+            border-color: var(--accent-light);
+            box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.3), var(--shadow-md);
+        }
+
+        .image-card .img-wrap {
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+
+        .image-card .img-wrap img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover .img-wrap img {
+            transform: scale(1.03);
+        }
+
+        /* Fixed height mode */
+        .fixed-height .image-card .img-wrap {
+            height: 220px;
+        }
+
+        .fixed-height .image-card .img-wrap img {
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-card .image-info {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+
+        .image-card .image-info .idx {
+            color: var(--text-muted);
+            margin-right: 0.3rem;
+            font-size: 0.75rem;
+        }
+
+        /* Checkbox */
+        .checkbox {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 22px;
+            height: 22px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+            transition: all 0.15s;
+            backdrop-filter: blur(4px);
+        }
+
+        .checkbox:hover {
+            background: rgba(0, 0, 0, 0.7);
+            border-color: #fff;
+        }
+
+        .checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .checkbox.checked::after {
+            content: '';
+            width: 5px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+        }
+
+        /* Hover overlay */
+        .image-card .hover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .image-card:hover .hover-overlay {
+            opacity: 1;
+        }
+
+        .hover-overlay .zoom-hint {
+            color: #fff;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 0.4rem 0.8rem;
+            border-radius: 100px;
+            backdrop-filter: blur(8px);
+        }
+
+        /* ========== Pagination Bar ========== */
+        .pagination-bar {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination-bar .page-info {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-right: 0.5rem;
+        }
+
+        .pagination-bar .page-btn {
+            min-width: 32px;
+            height: 32px;
+            padding: 0 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .pagination-bar .page-btn:hover:not(:disabled) {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+        }
+
+        .pagination-bar .page-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .pagination-bar .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .pagination-bar .page-ellipsis {
+            color: var(--text-muted);
+            padding: 0 0.3rem;
+            font-size: 0.85rem;
+        }
+
+        .pagination-bar .jump-group {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-left: 0.75rem;
+            padding-left: 0.75rem;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .pagination-bar .jump-group input {
+            width: 50px;
+            height: 32px;
+            padding: 0.3rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            text-align: center;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .pagination-bar .jump-group input:focus {
+            border-color: var(--accent);
+        }
+
+        /* ========== Modal ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal img {
+            max-width: 92vw;
+            max-height: 92vh;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .modal .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ========== Modal Content ========== */
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            max-width: 500px;
+            max-height: 70vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-content h3 {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .pending-list-container {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 100px;
+        }
+
+        .pending-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .pending-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .pending-item .folder {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+        }
+
+        .pending-item .remove-btn {
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s;
+        }
+
+        .pending-item .remove-btn:hover {
+            color: var(--danger);
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* ========== Toast ========== */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            padding: 0.75rem 1.25rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease;
+            max-width: 320px;
+        }
+
+        .toast.success {
+            border-left: 3px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 3px solid var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        /* ========== Loading ========== */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--text-muted);
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-light);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ========== Scrollbar ========== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* ========== Batch Actions Bar ========== */
+        .batch-bar {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            padding: 0.5rem 1rem;
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: var(--shadow-md);
+            z-index: 50;
+            animation: popUp 0.2s ease;
+        }
+
+        .batch-bar.visible {
+            display: flex;
+        }
+
+        @keyframes popUp {
+            from {
+                transform: translateX(-50%) translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .batch-bar .batch-count {
+            font-size: 0.85rem;
+            color: var(--accent-light);
+            font-weight: 500;
+            padding-right: 0.75rem;
+            border-right: 1px solid var(--border-color);
+        }
+
+        /* ========== Responsive ========== */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .header {
+                padding: 0 1rem;
+            }
+
+            .folder-badge {
+                max-width: 150px;
+            }
+        }
+    </style>
+    <base target="_blank">
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-brand">
+            <span class="icon">🖼️</span>
+            <span>图片分类工具</span>
+        </div>
+        <div class="header-base-dir">
+            <span class="dir-icon">📂</span>
+            <input type="text" id="baseDirInput" placeholder="输入目录路径" />
+            <button class="btn" onclick="setBaseDir()">设置</button>
+        </div>
+        <div class="header-controls">
+            <div class="folder-badge" id="folderBadge" style="display: none;">
+                <span class="label">当前:</span>
+                <span class="value" id="folderValue">未选择</span>
+            </div>
+            <div class="selection-badge" id="selectionBadge">
+                已选择 <span id="selectionCount">0</span> 张
+            </div>
+            <button class="btn btn-icon" onclick="refreshImages()" title="刷新">🔄</button>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-scroll">
+                <!-- Folders -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">
+                        <span>📁</span>
+                        <span>文件夹</span>
+                    </div>
+                    <div class="folder-list" id="folderList"></div>
+                </div>
+
+                <!-- Settings -->
+                <div class="sidebar-section">
+                    <div class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
+                        <span>⚙️ 设置</span>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="settings-content" id="settingsContent">
+                        <div class="setting-item">
+                            <label>每页显示</label>
+                            <select id="perPage" onchange="changePerPage()">
+                                <option value="20">20张</option>
+                                <option value="50" selected>50张</option>
+                                <option value="100">100张</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>列数</label>
+                            <select id="columnCount" onchange="changeColumnCount()">
+                                <option value="2">2列 (大)</option>
+                                <option value="3">3列</option>
+                                <option value="4">4列</option>
+                                <option value="5" selected>5列</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>显示模式</label>
+                            <select id="imageDisplayMode" onchange="changeImageDisplayMode()">
+                                <option value="contain">自适应高度</option>
+                                <option value="cover">固定高度</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>移动模式</label>
+                            <select id="moveMode" onchange="saveMoveMode()">
+                                <option value="direct">直接移动</option>
+                                <option value="pending">待确认移动</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="showPendingPanel()" style="width:100%;margin-top:0.5rem;">
+                            📋 待移动列表 (<span id="pendingCount">0</span>)
+                        </button>
+                        <div class="setting-hint">
+                            <span>📌</span>
+                            <span>已记住页码</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drop Zone -->
+            <div class="drop-zone" id="dropZone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)"
+                ondragleave="handleDragLeave(event)">
+                <div class="drop-icon">🗑️</div>
+                <h4>others</h4>
+                <p>拖拽图片到当前文件夹的 others 子文件夹</p>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="content-scroll" id="contentScroll">
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📂</div>
+                    <h3>请选择一个文件夹</h3>
+                    <p>从左侧文件夹列表中选择一个，开始浏览和分类图片。系统会自动记住你上次浏览的页码。</p>
+                </div>
+
+                <!-- Image Grid -->
+                <div class="image-grid" id="imageGrid" style="display: none;"></div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-bar" id="paginationBar" style="display: none;">
+                <span class="page-info" id="pageInfo"></span>
+                <button class="page-btn" id="btnPrev" onclick="goToPage(currentPage - 1)">←</button>
+                <div id="pageNumbers"></div>
+                <button class="page-btn" id="btnNext" onclick="goToPage(currentPage + 1)">→</button>
+                <div class="jump-group">
+                    <input type="number" id="jumpPage" min="1" placeholder="页码"
+                        onkeydown="if(event.key==='Enter')jumpToPage()">
+                    <button class="btn btn-primary" onclick="jumpToPage()">GO</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Actions -->
+    <div class="batch-bar" id="batchBar">
+        <span class="batch-count">已选择 <span id="batchCount">0</span> 张</span>
+        <button class="btn btn-primary" onclick="moveSelectedToOther()">移动到 others</button>
+        <button class="btn btn-danger" onclick="clearSelection()">清除选择</button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal" onclick="closeModal()">
+        <button class="modal-close">✕</button>
+        <img id="modalImg" />
+    </div>
+
+    <!-- Pending Modal -->
+    <div class="modal" id="pendingModal" onclick="closePendingModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closePendingModal()">✕</button>
+            <h3>📋 待移动列表</h3>
+            <div class="pending-list-container" id="pendingListContainer">
+                <div class="empty-state" id="pendingEmptyState">
+                    <div class="empty-icon">📋</div>
+                    <p>待移动列表为空</p>
+                </div>
+                <div class="pending-list" id="pendingList" style="display: none;"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="clearPending()">清空列表</button>
+                <button class="btn btn-primary" onclick="executePending()">确认执行</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        let currentFolder = '';
+        let currentPage = 1;
+        let perPage = 50;
+        let selectedImages = new Set();
+        let allImages = [];
+        let clickTimer = null;
+        let currentColumns = 5;
+        let totalPages = 1;
+
+        async function setBaseDir() {
+            const input = document.getElementById('baseDirInput');
+            const baseDir = input.value.trim();
+            if (!baseDir) {
+                showToast('请输入目录路径', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/set_base_dir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ base_dir: baseDir })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('设置成功！');
+                    await loadFolders();
+                    currentFolder = '';
+                    resetView();
+                } else {
+                    showToast('设置失败：' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('设置失败：' + e.message, 'error');
+            }
+        }
+
+        async function loadCurrentBaseDir() {
+            try {
+                const res = await fetch('/api/get_base_dir');
+                const data = await res.json();
+                document.getElementById('baseDirInput').value = data.base_dir || '';
+            } catch (e) {
+                console.error('加载当前目录失败', e);
+            }
+        }
+
+        function saveMoveMode() {
+            moveMode = document.getElementById('moveMode').value;
+            localStorage.setItem('moveMode', moveMode);
+        }
+
+        function loadMoveMode() {
+            const saved = localStorage.getItem('moveMode');
+            if (saved) {
+                moveMode = saved;
+                document.getElementById('moveMode').value = saved;
+            }
+        }
+
+        async function addToPending(folder, filename) {
+            try {
+                const res = await fetch('/api/pending', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add', folder, file: filename })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await updatePendingCount();
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                console.error('添加待移动失败:', e);
+                return false;
+            }
+        }
+
+        async function updatePendingCount() {
+            try {
+                const res = await fetch('/api/pending/list');
+                const data = await res.json();
+                document.getElementById('pendingCount').textContent = data.length;
+            } catch (e) {
+                console.error('更新待移动数量失败', e);
+            }
+        }
+
+        function showPendingPanel() {
+            document.getElementById('pendingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            loadPendingList();
+        }
+
+        function closePendingModal() {
+            document.getElementById('pendingModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        async function loadPendingList() {
+            try {
+                const res = await fetch('/api/pending/list');
+                const data = await res.json();
+                const list = document.getElementById('pendingList');
+                const empty = document.getElementById('pendingEmptyState');
+
+                if (data.length > 0) {
+                    empty.style.display = 'none';
+                    list.style.display = 'flex';
+                    list.innerHTML = data.map((m, i) => `
+                        <div class="pending-item">
+                            <span>
+                                <span class="folder">[${m.folder}]</span>
+                                <span>${m.file}</span>
+                            </span>
+                            <span class="remove-btn" onclick="removeFromPending('${m.folder}', '${m.file}')">×</span>
+                        </div>
+                    `).join('');
+                } else {
+                    empty.style.display = 'flex';
+                    list.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('加载待移动列表失败', e);
+            }
+        }
+
+        async function removeFromPending(folder, filename) {
+            try {
+                await fetch('/api/pending', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'remove', folder, file: filename })
+                });
+                await loadPendingList();
+                await updatePendingCount();
+            } catch (e) {
+                showToast('移除失败: ' + e.message, 'error');
+            }
+        }
+
+        async function clearPending() {
+            if (confirm('确认清空待移动列表？')) {
+                try {
+                    await fetch('/api/pending', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'clear' })
+                    });
+                    await loadPendingList();
+                    await updatePendingCount();
+                    showToast('已清空待移动列表');
+                } catch (e) {
+                    showToast('清空失败: ' + e.message, 'error');
+                }
+            }
+        }
+
+        async function executePending() {
+            const listRes = await fetch('/api/pending/list');
+            const pendingList = await listRes.json();
+
+            if (pendingList.length === 0) {
+                showToast('待移动列表为空', 'error');
+                return;
+            }
+
+            if (!confirm(`确认执行移动 ${pendingList.length} 个文件？`)) return;
+
+            const batchSize = 50;
+            let totalSuccess = 0;
+            const totalCount = pendingList.length;
+            let remainingList = [...pendingList];
+
+            for (let i = 0; i < remainingList.length; i += batchSize) {
+                const batch = remainingList.slice(i, i + batchSize);
+
+                await fetch('/api/pending', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'clear' })
+                });
+
+                for (const item of batch) {
+                    await fetch('/api/pending', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'add', ...item })
+                    });
+                }
+
+                const res = await fetch('/api/pending', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'execute' })
+                });
+
+                const data = await res.json();
+                totalSuccess += data.moved || 0;
+
+                const successItems = data.success_items || [];
+                if (successItems.length > 0) {
+                    await fetch('/api/pending', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'remove_batch', items: successItems })
+                    });
+                }
+
+                remainingList = remainingList.filter(item =>
+                    !successItems.some(s => s.folder === item.folder && s.file === item.file)
+                );
+
+                const progress = Math.min(totalCount - remainingList.length, totalCount);
+                showToast(`处理中: ${progress}/${totalCount} (成功 ${totalSuccess})`);
+            }
+
+            closePendingModal();
+            await updatePendingCount();
+            showToast(`完成: 成功 ${totalSuccess} 个`, 'success');
+            await loadFolders();
+            if (currentFolder) await loadImages();
+        }
+
+        async function loadFolders() {
+            try {
+                const res = await fetch('/api/folders');
+                const folders = await res.json();
+                const list = document.getElementById('folderList');
+                const savedPages = JSON.parse(localStorage.getItem('lastViewPage') || '{}');
+
+                list.innerHTML = folders.map(f => {
+                    const name = f.name || f;
+                    const count = f.count !== undefined ? f.count : null;
+                    const hasBookmark = savedPages[name] && savedPages[name] > 1;
+                    return `
+                        <div class="folder-item ${name === currentFolder ? 'active' : ''} ${hasBookmark ? 'has-bookmark' : ''}"
+                             data-folder-name="${name}"
+                             onclick="selectFolder('${name}')">
+                            <span class="folder-name">
+                                <span class="folder-icon">📁</span>
+                                <span>${name}</span>
+                            </span>
+                            <span class="count">${count !== null ? count : ''}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('加载文件夹失败', e);
+            }
+        }
+
+        async function selectFolder(folder) {
+            currentFolder = folder;
+            const savedPages = JSON.parse(localStorage.getItem('lastViewPage') || '{}');
+            currentPage = savedPages[folder] || 1;
+            selectedImages.clear();
+            updateBatchBar();
+
+            // Update folder list active state
+            document.querySelectorAll('.folder-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.folderName === folder);
+            });
+
+            // Update header badge
+            const badge = document.getElementById('folderBadge');
+            const value = document.getElementById('folderValue');
+            badge.style.display = 'flex';
+            value.textContent = folder;
+
+            await loadImages();
+        }
+
+        function resetView() {
+            document.getElementById('emptyState').style.display = 'flex';
+            document.getElementById('imageGrid').style.display = 'none';
+            document.getElementById('paginationBar').style.display = 'none';
+            document.getElementById('folderBadge').style.display = 'none';
+        }
+
+        function changeColumnCount() {
+            const select = document.getElementById('columnCount');
+            currentColumns = parseInt(select.value);
+            applyColumnSettings();
+            localStorage.setItem('columnCount', currentColumns);
+        }
+
+        function changeImageDisplayMode() {
+            const mode = document.getElementById('imageDisplayMode').value;
+            const content = document.querySelector('.content-scroll');
+            if (mode === 'cover') {
+                content.classList.add('fixed-height');
+            } else {
+                content.classList.remove('fixed-height');
+            }
+            localStorage.setItem('imageDisplayMode', mode);
+        }
+
+        function loadSavedImageDisplayMode() {
+            const saved = localStorage.getItem('imageDisplayMode');
+            if (saved) {
+                document.getElementById('imageDisplayMode').value = saved;
+                changeImageDisplayMode();
+            }
+        }
+
+        function applyColumnSettings() {
+            const grid = document.getElementById('imageGrid');
+            grid.style.gridTemplateColumns = `repeat(${currentColumns}, 1fr)`;
+        }
+
+        function loadSavedColumnCount() {
+            const saved = localStorage.getItem('columnCount');
+            if (saved) {
+                currentColumns = parseInt(saved);
+                document.getElementById('columnCount').value = currentColumns;
+                applyColumnSettings();
+            }
+        }
+
+        async function loadImages() {
+            if (!currentFolder) return;
+
+            const grid = document.getElementById('imageGrid');
+            const emptyState = document.getElementById('emptyState');
+            const paginationBar = document.getElementById('paginationBar');
+
+            emptyState.style.display = 'none';
+            grid.style.display = 'grid';
+            grid.innerHTML = '<div class="loading-state"><div class="spinner"></div><span>加载中...</span></div>';
+            paginationBar.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/images?folder=${encodeURIComponent(currentFolder)}&page=${currentPage}&per_page=${perPage}`);
+                const data = await res.json();
+                allImages = data.images;
+                totalPages = data.total_pages;
+
+                if (data.total === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <div class="empty-icon">🖼️</div>
+                            <h3>暂无图片</h3>
+                            <p>该文件夹下没有找到图片文件</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = data.images.map((img, i) => `
+                    <div class="image-card ${selectedImages.has(img) ? 'selected' : ''}"
+                         draggable="true"
+                         ondragstart="handleDragStart(event, '${img}')"
+                         onclick="handleSingleClick(event, '${img}')"
+                         ondblclick="handleDoubleClick(event, '${currentFolder}/${img}')">
+                        <div class="checkbox ${selectedImages.has(img) ? 'checked' : ''}"
+                             onclick="event.stopPropagation(); toggleSelect(event, '${img}')">
+                        </div>
+                        <div class="img-wrap">
+                            <img src="${encodeURIComponent(currentFolder)}/${encodeURIComponent(img)}" loading="lazy" alt="${img}" />
+                            <div class="hover-overlay">
+                                <span class="zoom-hint">双击查看大图</span>
+                            </div>
+                        </div>
+                        <div class="image-info">
+                            <span class="idx">${(currentPage - 1) * perPage + i + 1}.</span>
+                            <span>${img}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                renderPagination(data.total_pages);
+                paginationBar.style.display = 'flex';
+                updateSelectionInfo();
+                applyColumnSettings();
+
+                // Save page
+                const savedPages = JSON.parse(localStorage.getItem('lastViewPage') || '{}');
+                savedPages[currentFolder] = currentPage;
+                localStorage.setItem('lastViewPage', JSON.stringify(savedPages));
+
+                // Scroll to top
+                document.getElementById('contentScroll').scrollTop = 0;
+            } catch (e) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><h3>加载失败</h3><p>${e.message}</p></div>`;
+            }
+        }
+
+        function renderPagination(total) {
+            const pageInfo = document.getElementById('pageInfo');
+            const pageNumbers = document.getElementById('pageNumbers');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+
+            pageInfo.textContent = `第 ${currentPage} / ${total} 页`;
+            btnPrev.disabled = currentPage <= 1;
+            btnNext.disabled = currentPage >= total;
+
+            let html = '';
+            const maxVisible = 5;
+            let start = Math.max(1, currentPage - 2);
+            let end = Math.min(total, start + maxVisible - 1);
+
+            if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+            }
+
+            if (start > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (start > 2) html += `<span class="page-ellipsis">...</span>`;
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (end < total) {
+                if (end < total - 1) html += `<span class="page-ellipsis">...</span>`;
+                html += `<button class="page-btn" onclick="goToPage(${total})">${total}</button>`;
+            }
+
+            pageNumbers.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            const savedPages = JSON.parse(localStorage.getItem('lastViewPage') || '{}');
+            savedPages[currentFolder] = currentPage;
+            localStorage.setItem('lastViewPage', JSON.stringify(savedPages));
+            loadImages();
+        }
+
+        function jumpToPage() {
+            const input = document.getElementById('jumpPage');
+            const page = parseInt(input.value);
+            if (page && page > 0 && page <= totalPages) {
+                goToPage(page);
+                input.value = '';
+            } else {
+                showToast('请输入有效的页码', 'error');
+            }
+        }
+
+        function changePerPage() {
+            perPage = parseInt(document.getElementById('perPage').value);
+            currentPage = 1;
+            loadImages();
+        }
+
+        function refreshImages() {
+            if (currentFolder) {
+                loadImages();
+                loadFolders();
+            } else {
+                showToast('请先选择一个文件夹', 'error');
+            }
+        }
+
+        function toggleSelect(event, img) {
+            event.stopPropagation();
+            if (selectedImages.has(img)) {
+                selectedImages.delete(img);
+            } else {
+                selectedImages.add(img);
+            }
+            updateSelectionInfo();
+            updateCheckboxes();
+        }
+
+        function updateCheckboxes() {
+            document.querySelectorAll('.image-card').forEach(card => {
+                const imgName = card.querySelector('.image-info span:last-child').textContent;
+                const checkbox = card.querySelector('.checkbox');
+                const isSelected = selectedImages.has(imgName);
+                checkbox.classList.toggle('checked', isSelected);
+                card.classList.toggle('selected', isSelected);
+            });
+        }
+
+        function updateSelectionInfo() {
+            const badge = document.getElementById('selectionBadge');
+            const count = document.getElementById('selectionCount');
+            const batchBar = document.getElementById('batchBar');
+            const batchCount = document.getElementById('batchCount');
+
+            if (selectedImages.size > 0) {
+                badge.classList.add('visible');
+                count.textContent = selectedImages.size;
+                batchBar.classList.add('visible');
+                batchCount.textContent = selectedImages.size;
+            } else {
+                badge.classList.remove('visible');
+                batchBar.classList.remove('visible');
+            }
+        }
+
+        function updateBatchBar() {
+            updateSelectionInfo();
+        }
+
+        function clearSelection() {
+            selectedImages.clear();
+            updateSelectionInfo();
+            updateCheckboxes();
+        }
+
+        function handleDragStart(event, filename) {
+            event.dataTransfer.setData('filename', filename);
+            event.dataTransfer.setData('folder', currentFolder);
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        async function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+
+            const filename = event.dataTransfer.getData('filename');
+            const folder = event.dataTransfer.getData('folder');
+
+            if (filename && folder) {
+                await moveImage(folder, filename);
+            }
+        }
+
+        async function moveImage(srcFolder, filename) {
+            if (moveMode === 'pending') {
+                const success = await addToPending(srcFolder, filename);
+                if (success) {
+                    showToast('已加入待移动列表');
+                } else {
+                    showToast('添加失败', 'error');
+                }
+                selectedImages.delete(filename);
+                updateSelectionInfo();
+                updateCheckboxes();
+            } else {
+                try {
+                    const res = await fetch('/api/move', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ src_folder: srcFolder, filename })
+                    });
+
+                    if (res.ok) {
+                        showToast(`已移动: ${filename}`);
+                        selectedImages.delete(filename);
+                        loadImages();
+                        loadFolders();
+                    } else {
+                        showToast('移动失败', 'error');
+                    }
+                } catch (e) {
+                    showToast('移动失败: ' + e.message, 'error');
+                }
+            }
+        }
+
+        async function moveSelectedToOther() {
+            if (selectedImages.size === 0) return;
+
+            if (moveMode === 'pending') {
+                let successCount = 0;
+                for (const filename of selectedImages) {
+                    const success = await addToPending(currentFolder, filename);
+                    if (success) successCount++;
+                }
+                selectedImages.clear();
+                updateSelectionInfo();
+                updateCheckboxes();
+                showToast(`已加入待移动列表 ${successCount} 个`);
+            } else {
+                try {
+                    const res = await fetch('/api/move_batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            src_folder: currentFolder,
+                            filenames: Array.from(selectedImages)
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        showToast(`已移动 ${data.moved || selectedImages.size} 张图片`);
+                        selectedImages.clear();
+                        loadImages();
+                        loadFolders();
+                    } else {
+                        showToast('批量移动失败', 'error');
+                    }
+                } catch (e) {
+                    showToast('批量移动失败: ' + e.message, 'error');
+                }
+            }
+        }
+
+        function handleSingleClick(event, img) {
+            event.stopPropagation();
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+                toggleSelect(event, img);
+            }, 250);
+        }
+
+        function handleDoubleClick(event, src) {
+            event.stopPropagation();
+            clearTimeout(clickTimer);
+            openModal(src);
+        }
+
+        function openModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = type === 'success' ? `✓ ${msg}` : `✕ ${msg}`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function toggleSettings() {
+            const content = document.getElementById('settingsContent');
+            const toggle = document.getElementById('settingsToggle');
+            content.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+            if (!currentFolder) return;
+
+            if (e.key === 'ArrowLeft' && currentPage > 1) {
+                goToPage(currentPage - 1);
+            } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        });
+
+        // Initialize
+        async function init() {
+            await loadCurrentBaseDir();
+            await loadFolders();
+            loadSavedColumnCount();
+            loadSavedImageDisplayMode();
+            loadMoveMode();
+            await updatePendingCount();
+
+            // Auto-expand settings if base dir not set
+            const baseDir = document.getElementById('baseDirInput').value;
+            if (!baseDir) {
+                toggleSettings();
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
