@@ -1354,8 +1354,8 @@
             const totalCount = pendingList.length;
             let remainingList = [...pendingList];
 
-            for (let i = 0; i < remainingList.length; i += batchSize) {
-                const batch = remainingList.slice(i, i + batchSize);
+            while (remainingList.length > 0) {
+                const batch = remainingList.slice(0, batchSize);
 
                 const res = await fetch('/api/pending', {
                     method: 'POST',
@@ -1379,7 +1379,7 @@
                     !successItems.some(s => s.folder === item.folder && s.file === item.file)
                 );
 
-                const progress = Math.min(totalCount - remainingList.length, totalCount);
+                const progress = totalCount - remainingList.length;
                 showToast(`处理中: ${progress}/${totalCount} (成功 ${totalSuccess})`);
             }
 
