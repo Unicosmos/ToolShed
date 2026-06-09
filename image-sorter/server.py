@@ -225,7 +225,13 @@ class ImageHandler(SimpleHTTPRequestHandler):
                 failed = []
                 success_items = []
                 
-                target_base_dir = os.path.join(ROOT_DIR, "others")
+                target_path = data.get("target_path")
+                if target_path:
+                    target_base_dir = os.path.abspath(target_path)
+                else:
+                    target_base_dir = os.path.join(ROOT_DIR, "others")
+                
+                os.makedirs(target_base_dir, exist_ok=True)
                 
                 for m in moves:
                     folder = m["folder"]

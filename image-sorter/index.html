@@ -1155,6 +1155,10 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="modal-close" onclick="closePendingModal()">✕</button>
             <h3>📋 待移动列表</h3>
+            <div class="setting-item" style="margin-bottom: 1rem;">
+                <label>目标路径</label>
+                <input type="text" id="targetPathInput" placeholder="留空则使用默认路径 (others)" style="width:100%;" />
+            </div>
             <div class="pending-list-container" id="pendingListContainer">
                 <div class="empty-state" id="pendingEmptyState">
                     <div class="empty-icon">📋</div>
@@ -1341,7 +1345,9 @@
                 return;
             }
 
-            if (!confirm(`确认执行移动 ${pendingList.length} 个文件？`)) return;
+            const targetPath = document.getElementById('targetPathInput').value.trim();
+
+            if (!confirm(`确认执行移动 ${pendingList.length} 个文件？${targetPath ? '\n目标路径: ' + targetPath : ''}`)) return;
 
             const batchSize = 50;
             let totalSuccess = 0;
@@ -1354,7 +1360,7 @@
                 const res = await fetch('/api/pending', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'execute', items: batch })
+                    body: JSON.stringify({ action: 'execute', items: batch, target_path: targetPath || undefined })
                 });
 
                 const data = await res.json();
