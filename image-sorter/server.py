@@ -216,7 +216,11 @@ class ImageHandler(SimpleHTTPRequestHandler):
                 )
 
             elif action == "execute":
-                moves = load_pending()
+                items = data.get("items")
+                if items:
+                    moves = items
+                else:
+                    moves = load_pending()
                 success = 0
                 failed = []
                 success_items = []

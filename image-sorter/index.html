@@ -1351,24 +1351,10 @@
             for (let i = 0; i < remainingList.length; i += batchSize) {
                 const batch = remainingList.slice(i, i + batchSize);
 
-                await fetch('/api/pending', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'clear' })
-                });
-
-                for (const item of batch) {
-                    await fetch('/api/pending', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'add', ...item })
-                    });
-                }
-
                 const res = await fetch('/api/pending', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'execute' })
+                    body: JSON.stringify({ action: 'execute', items: batch })
                 });
 
                 const data = await res.json();
