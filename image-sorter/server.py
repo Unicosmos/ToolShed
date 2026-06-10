@@ -135,6 +135,66 @@ class ImageHandler(SimpleHTTPRequestHandler):
                 ).encode("utf-8")
             )
 
+        elif parsed_path.path == "/api/list_directory":
+            query = parse_qs(parsed_path.query)
+            dir_path = query.get("path", [""])[0]
+            
+            if dir_path.startswith('/'):
+                full_path = dir_path
+            else:
+                full_path = os.path.join(current_base_dir, dir_path) if dir_path else current_base_dir
+            
+            if not os.path.isdir(full_path):
+                parent_path = os.path.dirname(full_path)
+                last_part = os.path.basename(full_path)
+                
+                if os.path.isdir(parent_path) and last_part:
+                    matching_dirs = []
+                    for entry in os.listdir(parent_path):
+                        entry_path = os.path.join(parent_path, entry)
+                        if os.path.isdir(entry_path) and entry.startswith(last_part):
+                            matching_dirs.append(entry)
+                    
+                    if matching_dirs:
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/json; charset=utf-8")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "entries": [{"name": d, "is_dir": True, "path": os.path.join(parent_path, d)} for d in matching_dirs],
+                            "current_path": dir_path,
+                            "parent_path": parent_path if parent_path != '/' else ""
+                        }, ensure_ascii=False).encode("utf-8"))
+                        return
+            
+            if not os.path.isdir(full_path):
+                self.send_response(404)
+                self.end_headers()
+                return
+            
+            parent_path = os.path.dirname(full_path)
+            entries = []
+            try:
+                for entry in sorted(os.listdir(full_path)):
+                    if entry.startswith("."):
+                        continue
+                    entry_path = os.path.join(full_path, entry)
+                    entries.append({
+                        "name": entry,
+                        "is_dir": os.path.isdir(entry_path),
+                        "path": entry_path
+                    })
+            except PermissionError:
+                pass
+            
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "entries": entries,
+                "current_path": full_path,
+                "parent_path": parent_path if full_path != '/' else ""
+            }, ensure_ascii=False).encode("utf-8"))
+
         else:
             super().do_GET()
 

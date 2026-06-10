@@ -812,6 +812,39 @@
             flex-direction: column;
         }
 
+        .modal-content.file-manager {
+            width: 800px;
+            max-width: 90vw;
+            max-height: 75vh;
+            min-height: 400px;
+        }
+
+        .modal-content.file-manager .file-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-content.file-manager .file-nav input {
+            flex: 1;
+            min-width: 0;
+            padding: 0.5rem 0.75rem;
+            font-family: monospace;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+        }
+
+        .modal-content.file-manager .file-list-container {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+
         .modal-content h3 {
             color: var(--text-primary);
             font-size: 1.1rem;
@@ -1016,6 +1049,49 @@
             border-right: 1px solid var(--border-color);
         }
 
+        /* ========== File Manager Styles ========== */
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 0.9rem;
+        }
+
+        .file-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .file-item .file-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .file-item .file-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-item.dir {
+            color: var(--accent-light);
+        }
+
+        .file-item.file {
+            color: var(--text-secondary);
+        }
+
         /* ========== Responsive ========== */
         @media (max-width: 768px) {
             .sidebar {
@@ -1042,7 +1118,7 @@
             <span>图片分类工具</span>
         </div>
         <div class="header-base-dir">
-            <span class="dir-icon">📂</span>
+            <span class="dir-icon" onclick="openFileManager()" style="cursor: pointer;">📂</span>
             <input type="text" id="baseDirInput" placeholder="输入目录路径" />
             <button class="btn" onclick="setBaseDir()">设置</button>
         </div>
@@ -1193,6 +1269,22 @@
             <div class="modal-actions">
                 <button class="btn btn-danger" onclick="clearPending()">清空列表</button>
                 <button class="btn btn-primary" onclick="executePending()">确认执行</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Manager Modal -->
+    <div class="modal" id="fileManagerModal" onclick="closeFileManager()">
+        <div class="modal-content file-manager" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeFileManager()">✕</button>
+            <h3>📁 文件管理器</h3>
+            <div class="file-nav">
+                <button class="btn btn-icon" onclick="navigateUp()" title="返回上级" id="btnUp">↑</button>
+                <input type="text" id="fileManagerPath" placeholder="输入路径实时浏览..." oninput="handlePathInput()" />
+                <button class="btn btn-primary" onclick="selectPath()">选择</button>
+            </div>
+            <div class="file-list-container">
+                <div class="file-list" id="fileList"></div>
             </div>
         </div>
     </div>
@@ -1975,6 +2067,68 @@
                 goToPage(currentPage + 1);
             }
         });
+
+        // File Manager Functions
+        function openFileManager() {
+            document.getElementById('fileManagerModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            fetch('/api/get_base_dir').then(res => res.json()).then(data => {
+                document.getElementById('fileManagerPath').value = data.base_dir;
+                loadDirectory(data.base_dir);
+            });
+        }
+
+        function closeFileManager() {
+            document.getElementById('fileManagerModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        async function loadDirectory(path) {
+            try {
+                const res = await fetch(`/api/list_directory?path=${encodeURIComponent(path)}`);
+                const data = await res.json();
+
+                document.getElementById('fileManagerPath').value = data.current_path || path || '/';
+                document.getElementById('btnUp').disabled = !data.parent_path;
+
+                const fileList = document.getElementById('fileList');
+                if (data.entries.length === 0) {
+                    fileList.innerHTML = '<div class="empty-state" style="padding: 2rem;"><p>此目录为空</p></div>';
+                    return;
+                }
+
+                fileList.innerHTML = data.entries.map(entry => `
+                    <div class="file-item ${entry.is_dir ? 'dir' : 'file'}" 
+                         onclick="${entry.is_dir ? `loadDirectory('${entry.path}')` : ''}">
+                        <span class="file-icon">${entry.is_dir ? '📁' : '📄'}</span>
+                        <span class="file-name">${entry.name}</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '<div class="empty-state" style="padding: 2rem;"><p>路径不存在或无法访问</p></div>';
+            }
+        }
+
+        function handlePathInput() {
+            const path = document.getElementById('fileManagerPath').value.trim();
+            if (path) {
+                loadDirectory(path);
+            }
+        }
+
+        function navigateUp() {
+            const currentPath = document.getElementById('fileManagerPath').value;
+            if (!currentPath || currentPath === '/') return;
+            const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/';
+            loadDirectory(parentPath);
+        }
+
+        function selectPath() {
+            const path = document.getElementById('fileManagerPath').value;
+            document.getElementById('baseDirInput').value = path;
+            closeFileManager();
+        }
 
         // Initialize
         async function init() {
