@@ -502,6 +502,10 @@
         }
 
         /* Image Grid */
+        .image-grid-container {
+            min-height: 100%;
+        }
+
         .image-grid {
             display: grid;
             gap: 1rem;
@@ -641,6 +645,24 @@
             padding: 0.4rem 0.8rem;
             border-radius: 100px;
             backdrop-filter: blur(8px);
+        }
+
+        /* Drag selection box */
+        .drag-select-box {
+            position: fixed;
+            border: 2px solid var(--accent);
+            background: rgba(74, 158, 255, 0.2);
+            pointer-events: none;
+            z-index: 1000;
+            border-radius: 4px;
+        }
+
+        .dragging {
+            cursor: crosshair !important;
+        }
+
+        .dragging .image-card {
+            pointer-events: none;
         }
 
         /* ========== Pagination Bar ========== */
@@ -1119,7 +1141,9 @@
                 </div>
 
                 <!-- Image Grid -->
-                <div class="image-grid" id="imageGrid" style="display: none;"></div>
+                <div class="image-grid-container" id="imageGridContainer">
+                    <div class="image-grid" id="imageGrid" style="display: none;"></div>
+                </div>
             </div>
 
             <!-- Pagination -->
@@ -1185,6 +1209,13 @@
         let clickTimer = null;
         let currentColumns = 5;
         let totalPages = 1;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragBox = null;
+        let dragReplaceMode = false;
+        let dragThreshold = 5;
+        let hasMoved = false;
 
         async function setBaseDir() {
             const input = document.getElementById('baseDirInput');
@@ -1773,10 +1804,125 @@
 
         function handleSingleClick(event, img) {
             event.stopPropagation();
+            if (isDragging) return;
+
+            if (hasMoved) {
+                hasMoved = false;
+                return;
+            }
+
             clearTimeout(clickTimer);
             clickTimer = setTimeout(() => {
                 toggleSelect(event, img);
             }, 250);
+        }
+
+        function initDragSelect() {
+            const container = document.getElementById('imageGridContainer');
+            if (!container) return;
+            container.addEventListener('mousedown', handleDragStart);
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('mouseup', handleDragEnd);
+        }
+
+        function handleDragStart(e) {
+            const target = e.target;
+            const isGridArea = target.classList.contains('image-grid-container') ||
+                target.classList.contains('image-grid') ||
+                target.closest('.image-card');
+
+            if (isGridArea) {
+                isDragging = true;
+                hasMoved = false;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+
+                dragReplaceMode = e.ctrlKey || e.metaKey;
+                if (dragReplaceMode) {
+                    selectedImages.clear();
+                }
+            }
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging) return;
+
+            const currentX = e.clientX;
+            const currentY = e.clientY;
+
+            const distance = Math.sqrt(
+                Math.pow(currentX - dragStartX, 2) +
+                Math.pow(currentY - dragStartY, 2)
+            );
+
+            if (distance >= dragThreshold) {
+                hasMoved = true;
+
+                if (!dragBox) {
+                    dragBox = document.createElement('div');
+                    dragBox.className = 'drag-select-box';
+                    document.body.appendChild(dragBox);
+                    document.body.classList.add('dragging');
+                }
+
+                const left = Math.min(dragStartX, currentX);
+                const top = Math.min(dragStartY, currentY);
+                const width = Math.abs(currentX - dragStartX);
+                const height = Math.abs(currentY - dragStartY);
+
+                dragBox.style.left = left + 'px';
+                dragBox.style.top = top + 'px';
+                dragBox.style.width = width + 'px';
+                dragBox.style.height = height + 'px';
+
+                updateDragSelection(e);
+            }
+        }
+
+        function handleDragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+
+            if (dragBox) {
+                dragBox.remove();
+                dragBox = null;
+            }
+            document.body.classList.remove('dragging');
+
+            if (hasMoved) {
+                updateSelectionInfo();
+                updateCheckboxes();
+            }
+        }
+
+        function updateDragSelection(e) {
+            if (!dragBox) return;
+            const boxRect = dragBox.getBoundingClientRect();
+            const cards = document.querySelectorAll('.image-card');
+
+            cards.forEach(card => {
+                const cardRect = card.getBoundingClientRect();
+                const imgName = card.querySelector('.image-info span:last-child').textContent;
+                const checkbox = card.querySelector('.checkbox');
+
+                if (isRectIntersecting(boxRect, cardRect)) {
+                    selectedImages.add(imgName);
+                    card.classList.add('selected');
+                    checkbox.classList.add('checked');
+                } else if (dragReplaceMode) {
+                    selectedImages.delete(imgName);
+                    card.classList.remove('selected');
+                    checkbox.classList.remove('checked');
+                }
+            });
+            updateSelectionInfo();
+        }
+
+        function isRectIntersecting(rect1, rect2) {
+            return rect1.left < rect2.right &&
+                rect1.right > rect2.left &&
+                rect1.top < rect2.bottom &&
+                rect1.bottom > rect2.top;
         }
 
         function handleDoubleClick(event, src) {
@@ -1838,6 +1984,7 @@
             loadSavedImageDisplayMode();
             loadMoveMode();
             await updatePendingCount();
+            initDragSelect();
 
             // Auto-expand settings if base dir not set
             const baseDir = document.getElementById('baseDirInput').value;
