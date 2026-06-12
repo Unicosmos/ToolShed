@@ -406,6 +406,22 @@
             height: 32px;
         }
 
+        /* Settings Row - 3 display settings in one line */
+        .settings-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .settings-row .setting-item {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .settings-row .setting-item label {
+            font-size: 0.75rem;
+        }
+
         .setting-hint {
             font-size: 0.75rem;
             color: var(--text-muted);
@@ -767,8 +783,9 @@
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 1.5rem;
-            max-width: 500px;
-            max-height: 70vh;
+            min-width: 500px;
+            max-width: 600px;
+            max-height: 80vh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -1117,29 +1134,31 @@
                         <span class="arrow">▶</span>
                     </div>
                     <div class="settings-content" id="settingsContent">
-                        <div class="setting-item">
-                            <label>每页显示</label>
-                            <select id="perPage" onchange="changePerPage()">
-                                <option value="20">20张</option>
-                                <option value="50" selected>50张</option>
-                                <option value="100">100张</option>
-                            </select>
-                        </div>
-                        <div class="setting-item">
-                            <label>列数</label>
-                            <select id="columnCount" onchange="changeColumnCount()">
-                                <option value="2">2列 (大)</option>
-                                <option value="3">3列</option>
-                                <option value="4">4列</option>
-                                <option value="5" selected>5列</option>
-                            </select>
-                        </div>
-                        <div class="setting-item">
-                            <label>显示模式</label>
-                            <select id="imageDisplayMode" onchange="changeImageDisplayMode()">
-                                <option value="contain">自适应高度</option>
-                                <option value="cover">固定高度</option>
-                            </select>
+                        <div class="settings-row">
+                            <div class="setting-item">
+                                <label>每页</label>
+                                <select id="perPage" onchange="changePerPage()">
+                                    <option value="20">20张</option>
+                                    <option value="50" selected>50张</option>
+                                    <option value="100">100张</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>列数</label>
+                                <select id="columnCount" onchange="changeColumnCount()">
+                                    <option value="2">2列 (大)</option>
+                                    <option value="3">3列</option>
+                                    <option value="4">4列</option>
+                                    <option value="5" selected>5列</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>模式</label>
+                                <select id="imageDisplayMode" onchange="changeImageDisplayMode()">
+                                    <option value="contain">自适应高度</option>
+                                    <option value="cover">固定高度</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="setting-item">
                             <label>移动模式</label>
@@ -1212,7 +1231,10 @@
             <h3>📋 待移动列表</h3>
             <div class="setting-item" style="margin-bottom: 1rem;">
                 <label>目标路径</label>
-                <input type="text" id="targetPathInput" placeholder="留空则使用默认路径 (others)" style="width:100%;" />
+                <div class="input-row">
+                    <button class="btn btn-icon" onclick="openPathPicker()" title="选择文件夹">📁</button>
+                    <input type="text" id="targetPathInput" placeholder="留空则使用默认路径 (others)" />
+                </div>
             </div>
             <div class="pending-list-container" id="pendingListContainer">
                 <div class="empty-state" id="pendingEmptyState">
@@ -2060,8 +2082,24 @@
 
         function selectPath() {
             const path = document.getElementById('fileManagerPath').value;
+
+            // 如果是从待移动列表弹窗调用的
+            if (window.pathPickerTarget === 'pendingModal') {
+                document.getElementById('targetPathInput').value = path;
+                closeFileManager();
+                window.pathPickerTarget = null;
+                return;
+            }
+
+            // 否则是设置工作文件夹
             document.getElementById('baseDirInput').value = path;
             closeFileManager();
+        }
+
+        // Open path picker for pending modal
+        function openPathPicker() {
+            window.pathPickerTarget = 'pendingModal';
+            openFileManager();
         }
 
         // Initialize
