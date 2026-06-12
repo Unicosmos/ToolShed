@@ -19,7 +19,7 @@ def load_pending():
         try:
             with open(pending_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except (json.JSONDecodeError, OSError):
             return []
     return []
 
@@ -76,7 +76,7 @@ class ImageHandler(SimpleHTTPRequestHandler):
                             if f.lower().endswith(IMAGE_EXTENSIONS):
                                 count += 1
                         folders.append({"name": d, "count": count})
-            except:
+            except OSError:
                 folders = []
             self.wfile.write(json.dumps(folders, ensure_ascii=False).encode("utf-8"))
 
@@ -411,7 +411,7 @@ def run_server(port=8000):
         print(
             f'Available folders: {[d for d in os.listdir(current_base_dir) if os.path.isdir(os.path.join(current_base_dir, d)) and not d.startswith(".")]}'
         )
-    except:
+    except OSError:
         print("No folders found or base dir not set")
     httpd.serve_forever()
 
